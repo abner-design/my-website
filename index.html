@@ -23,89 +23,103 @@
 
         * { box-sizing: border-box; }
 
-        body {
+        html, body {
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
             font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-light);
             margin: 0;
-            padding: 12px;
-            line-height: 1.5;
-            overflow-x: hidden;
+            padding: 6px 10px;
+            box-sizing: border-box;
+            line-height: 1.4;
         }
 
         .container {
-            max-width: 1380px;
+            max-width: 1400px;
+            height: calc(100vh - 12px);
             margin: 0 auto;
             background: var(--card-bg);
-            padding: 16px 20px;
-            border-radius: 18px;
+            padding: 8px 12px;
+            border-radius: 14px;
             box-shadow: 0 12px 36px rgba(0,0,0,0.5);
             border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
         header {
             text-align: center;
             border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 6px;
-            margin-bottom: 10px;
+            padding-bottom: 3px;
+            margin-bottom: 4px;
         }
 
         h1 {
             color: #4ADE80;
-            margin: 0 0 2px 0;
-            font-size: 23px;
+            margin: 0;
+            font-size: 19px;
             font-weight: 800;
         }
 
-        .subtitle { color: #94A3B8; font-size: 13px; }
+        .subtitle { color: #94A3B8; font-size: 11.5px; }
 
         /* 情境帶入說明區塊 */
         .story-intro {
             background: #0F172A;
             border-left: 4px solid #F59E0B;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 13px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11.5px;
             color: #FEF3C7;
-            margin-bottom: 10px;
-            line-height: 1.4;
+            margin-bottom: 6px;
+            line-height: 1.35;
         }
 
         /* 雙欄 layout */
         .main-layout {
             display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 14px;
-            align-items: start;
+            grid-template-columns: 1fr 340px;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
 
         .left-column {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
+            height: 100%;
+            min-height: 0;
         }
 
         .right-column {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
+            height: 100%;
+            min-height: 0;
         }
 
         /* 關卡與視角選擇 */
         .scenario-tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .tab-btn {
             flex: 1;
-            padding: 8px 10px;
+            padding: 5px 8px;
             border: 2px solid #475569;
-            border-radius: var(--border-radius);
+            border-radius: 10px;
             background: #0F172A;
             cursor: pointer;
             text-align: center;
-            font-size: 14px;
+            font-size: 12.5px;
             font-weight: bold;
             color: #94A3B8;
             transition: all 0.3s ease;
@@ -121,18 +135,20 @@
         .info-banner {
             background: #1E3A8A;
             border-left: 4px solid #38BDF8;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12.5px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11.5px;
             color: #E0F2FE;
+            line-height: 1.35;
         }
 
-        /* 3D Viewport - 調整高度 360px 以防產生滾動條 */
+        /* 3D Viewport - 自動分配剩餘高度 */
         .viewport-3d {
             position: relative;
             width: 100%;
-            height: 360px;
-            border-radius: var(--border-radius);
+            flex: 1;
+            min-height: 180px;
+            border-radius: 12px;
             overflow: hidden;
             border: 2px solid #475569;
             background: #000;
@@ -142,15 +158,15 @@
         /* 行人號誌 15 秒倒數 HUD 燈箱 */
         .ped-light-hud {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 10px;
+            right: 10px;
             background: rgba(15, 23, 42, 0.92);
             border: 2px solid #4ADE80;
-            border-radius: 10px;
-            padding: 6px 12px;
+            border-radius: 8px;
+            padding: 4px 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             z-index: 10;
             box-shadow: 0 4px 16px rgba(0,0,0,0.6);
             backdrop-filter: blur(8px);
@@ -158,12 +174,12 @@
 
         .ped-light-hud.red-phase { border-color: #EF4444; }
         .ped-light-hud.yellow-phase { border-color: #F59E0B; }
-        .ped-icon-box { font-size: 22px; line-height: 1; }
+        .ped-icon-box { font-size: 20px; line-height: 1; }
         .ped-timer-text {
-            font-size: 20px; font-weight: 800; color: #4ADE80;
-            font-family: monospace; min-width: 45px; text-align: right;
+            font-size: 18px; font-weight: 800; color: #4ADE80;
+            font-family: monospace; min-width: 40px; text-align: right;
         }
-        .ped-hud-label { font-size: 11px; color: #94A3B8; font-weight: bold; }
+        .ped-hud-label { font-size: 10.5px; color: #94A3B8; font-weight: bold; }
 
         /* 畫面顛簸震動特效 */
         .viewport-3d.shake-effect { animation: bumpShake 0.4s ease infinite; }
@@ -191,107 +207,107 @@
         /* 操作面板 */
         .controls-bar {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             justify-content: space-between;
             background: #0F172A;
-            padding: 8px 14px;
-            border-radius: var(--border-radius);
+            padding: 5px 10px;
+            border-radius: 10px;
             border: 1px solid #334155;
         }
 
         .btn-move {
-            padding: 7px 12px;
-            font-size: 13.5px;
+            padding: 5px 10px;
+            font-size: 12px;
             font-weight: bold;
             background: var(--accent-blue);
             color: #FFF;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: 0.2s;
         }
         .btn-move:hover { background: #0284C7; }
 
         .status-badge {
-            font-size: 12.5px;
+            font-size: 11px;
             font-weight: bold;
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 4px 8px;
+            border-radius: 6px;
         }
 
         .status-badge.blocked { background: #7F1D1D; color: #FECACA; border: 1.5px solid #EF4444; }
         .status-badge.clear { background: #064E3B; color: #A7F3D0; border: 1.5px solid #10B981; }
         .status-badge.warning { background: #78350F; color: #FEF3C7; border: 1.5px solid #F59E0B; }
 
-        /* 儀表板 */
+        /* 儀表板 - 橫列置於上方 */
         .dash-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            gap: 6px;
         }
 
         .dash-card {
-            background: #0F172A; padding: 8px 10px; border-radius: var(--border-radius);
+            background: #0F172A; padding: 4px 8px; border-radius: 8px;
             text-align: center; border-top: 3px solid #4ADE80;
         }
 
-        .dash-title { font-size: 11.5px; color: #94A3B8; }
-        .dash-val { font-size: 19px; font-weight: 800; margin-top: 2px; }
+        .dash-title { font-size: 10.5px; color: #94A3B8; }
+        .dash-val { font-size: 15px; font-weight: 800; margin-top: 1px; }
 
         /* 右側象徵物解鎖直欄 */
         .symbols-box {
             background: #0F172A;
-            padding: 12px;
-            border-radius: var(--border-radius);
+            padding: 8px 10px;
+            border-radius: 12px;
             border: 1.5px solid #38BDF8;
         }
 
         .symbols-title {
-            font-size: 15px; font-weight: bold; color: #38BDF8; margin-top: 0;
-            margin-bottom: 8px; text-align: center;
+            font-size: 13px; font-weight: bold; color: #38BDF8; margin-top: 0;
+            margin-bottom: 6px; text-align: center;
         }
 
         .symbols-grid {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .symbol-card {
-            background: #1E293B; padding: 10px 12px; border-radius: var(--border-radius);
+            background: #1E293B; padding: 6px 8px; border-radius: 10px;
             border: 2px solid #334155; cursor: pointer; text-align: left; transition: 0.3s;
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: center; gap: 8px;
         }
 
         .symbol-card:hover { border-color: #38BDF8; }
         .symbol-card.active { border-color: #4ADE80; background: #064E3B; }
 
-        .symbol-icon { font-size: 26px; flex-shrink: 0; }
-        .symbol-name { font-size: 13.5px; font-weight: bold; margin-bottom: 2px; color: #F8FAFC; }
-        .symbol-desc { font-size: 11.5px; color: #94A3B8; line-height: 1.35; }
+        .symbol-icon { font-size: 20px; flex-shrink: 0; }
+        .symbol-name { font-size: 12px; font-weight: bold; margin-bottom: 1px; color: #F8FAFC; }
+        .symbol-desc { font-size: 10.5px; color: #94A3B8; line-height: 1.3; }
 
         .btn-upgrade {
-            width: 100%; padding: 11px; background: #059669; color: #FFF;
-            font-size: 15.5px; font-weight: bold; border: none; border-radius: var(--border-radius);
-            cursor: pointer; margin-top: 10px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+            width: 100%; padding: 8px; background: #059669; color: #FFF;
+            font-size: 14px; font-weight: bold; border: none; border-radius: 10px;
+            cursor: pointer; margin-top: 6px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);
         }
         .btn-upgrade:hover { background: #047857; }
 
         /* 心得單 */
         .reflection-box {
-            background: #1E293B; padding: 12px; border-radius: var(--border-radius);
+            background: #1E293B; padding: 8px 10px; border-radius: 12px;
             border: 1px solid #475569;
         }
 
         textarea {
-            width: 100%; height: 60px; padding: 8px; background: #0F172A; color: #FFF;
-            border: 1px solid #475569; border-radius: 8px; font-family: inherit; font-size: 12.5px; margin-bottom: 8px;
+            width: 100%; height: 42px; padding: 6px; background: #0F172A; color: #FFF;
+            border: 1px solid #475569; border-radius: 6px; font-family: inherit; font-size: 11.5px; margin-bottom: 4px; resize: none;
         }
 
         .btn-export {
-            background: #D97706; color: #FFF; padding: 8px 14px; border: none;
-            border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%;
+            background: #D97706; color: #FFF; padding: 6px 10px; border: none;
+            border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; width: 100%;
         }
 
         /* Modal 視窗 */
@@ -369,31 +385,7 @@
                 👨‍🦯 <b>【關卡一：視障體驗情境與任務】</b>：你眼前是一片漆黑，且耳邊預設<b>完全聽不到號誌聲響</b>！<br>🎯 <b>任務目標</b>：請嘗試前進感受迷失與車流危險，並於右側點擊<b>【📦 公平之箱】➔【🚀 啟動升級鍵】</b>解鎖 3D 黃色導盲磚與 15 秒嗶嗶語音號誌，聽聲辨位安全過馬路！
             </div>
 
-            <!-- 2. 3D Viewport -->
-            <div class="viewport-3d blind-mode" id="viewport-3d">
-                <!-- 15秒行人號誌 HUD 燈箱 -->
-                <div class="ped-light-hud" id="ped-light-hud">
-                    <div class="ped-icon-box" id="ped-hud-icon">🚶🟢</div>
-                    <div>
-                        <div class="ped-hud-label">行人號誌 (15秒)</div>
-                        <div class="ped-timer-text" id="ped-hud-timer">15s</div>
-                    </div>
-                </div>
-                <canvas id="canvas3d"></canvas>
-            </div>
-
-            <!-- 3. 操作列 -->
-            <div class="controls-bar">
-                <div style="display:flex; gap:6px;">
-                    <button class="btn-move" onclick="movePlayer('forward')">⬆️ 前進</button>
-                    <button class="btn-move" onclick="movePlayer('backward')">⬇️ 後退</button>
-                    <button class="btn-move" onclick="movePlayer('left')">⬅️ 左轉</button>
-                    <button class="btn-move" onclick="movePlayer('right')">右轉 ➡️</button>
-                </div>
-                <div class="status-badge clear" id="status-badge">ℹ️ 支援 `[↑/W]` `[↓/S]` `[←/A]` `[→/D]`</div>
-            </div>
-
-            <!-- 4. 數據儀表板 -->
+            <!-- 2. 數據儀表板 (橫列置於 3D 視角畫面上方) -->
             <div class="dash-grid">
                 <div class="dash-card">
                     <div class="dash-title">過馬路險境指數</div>
@@ -407,6 +399,30 @@
                     <div class="dash-title">3D 動態路口無障礙等級</div>
                     <div class="dash-val" id="val-level" style="color: #4ADE80;">Level 0 (連人行道都沒有)</div>
                 </div>
+            </div>
+
+            <!-- 3. 3D Viewport -->
+            <div class="viewport-3d blind-mode" id="viewport-3d">
+                <!-- 15秒行人號誌 HUD 燈箱 -->
+                <div class="ped-light-hud" id="ped-light-hud">
+                    <div class="ped-icon-box" id="ped-hud-icon">🚶🟢</div>
+                    <div>
+                        <div class="ped-hud-label">行人號誌 (15秒)</div>
+                        <div class="ped-timer-text" id="ped-hud-timer">15s</div>
+                    </div>
+                </div>
+                <canvas id="canvas3d"></canvas>
+            </div>
+
+            <!-- 4. 操作列 -->
+            <div class="controls-bar">
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-move" onclick="movePlayer('forward')">⬆️ 前進</button>
+                    <button class="btn-move" onclick="movePlayer('backward')">⬇️ 後退</button>
+                    <button class="btn-move" onclick="movePlayer('left')">⬅️ 左轉</button>
+                    <button class="btn-move" onclick="movePlayer('right')">右轉 ➡️</button>
+                </div>
+                <div class="status-badge clear" id="status-badge">ℹ️ 支援 `[↑/W]` `[↓/S]` `[←/A]` `[→/D]`</div>
             </div>
         </div>
 
@@ -620,6 +636,17 @@
         renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true });
         renderer.setSize(width, height);
         renderer.shadowMap.enabled = true;
+
+        window.addEventListener('resize', () => {
+            if (!renderer || !camera) return;
+            const vp = document.getElementById('viewport-3d');
+            if (!vp) return;
+            const w = vp.clientWidth;
+            const h = vp.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        });
 
         const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambLight);
