@@ -360,7 +360,7 @@
                     👨‍🦯 關卡一：視障第一人稱視角<br><small>(按【公平之箱】全線鋪設 3D 導盲磚與嗶嗶號誌音)</small>
                 </button>
                 <button class="tab-btn" id="tab-wheelchair" onclick="setScenario('wheelchair')">
-                    👩‍🦽 關卡二：輪椅 3D 建模與視角<br><small>(3D 輪椅轉向 / 雙側 20cm 崁震動 / 正義之光削平斜坡)</small>
+                    👩‍🦽 關卡二：身障人士第一人稱視角<br><small>(輪椅推行視角 / 雙側 20cm 崁顛簸 / 正義之光削平斜坡)</small>
                 </button>
             </div>
 
@@ -544,6 +544,40 @@
         gain.connect(audioCtx.destination);
         osc.start(now);
         osc.stop(now + 0.25);
+    }
+
+    function playDisorientationSound() {
+        initAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.linearRampToValueAtTime(140, now + 0.3);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+
+    function playWheelchairStuckSound() {
+        initAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, now);
+        osc.frequency.linearRampToValueAtTime(30, now + 0.35);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.35);
     }
 
     setInterval(() => {
@@ -826,12 +860,12 @@
         if (scenario === 'blind') {
             document.getElementById('tab-blind').classList.add('active');
             viewport.classList.add('blind-mode');
-            text.innerHTML = `👨‍🦯 <b>【關卡一：視障體驗情境與任務】</b>：你眼前是一片漆黑，且耳邊預設<b>完全聽不到號誌聲響</b>！<br>🎯 <b>任務目標</b>：請嘗試前進感受迷失與車流危險，並於右側點擊<b>【📦 公平之箱】➔【🚀 啟動升級鍵】</b>解鎖 3D 黃色導盲磚與 15 秒嗶嗶語音號誌，聽聲辨位安全過馬路！`;
+            text.innerHTML = `👨‍🦯 <b>【關卡一：視障第一人稱視角情境與任務】</b>：你眼前是一片漆黑，且耳邊預設<b>完全聽不到號誌聲響</b>！<br>🎯 <b>任務目標</b>：請嘗試前進感受迷失與車流危險，並於右側點擊<b>【📦 公平之箱】➔【🚀 啟動升級鍵】</b>解鎖 3D 黃色導盲磚與 15 秒嗶嗶語音號誌，聽聲辨位安全過馬路！`;
             wheelchairGroup.visible = false;
         } else {
             document.getElementById('tab-wheelchair').classList.add('active');
             viewport.classList.remove('blind-mode');
-            text.innerHTML = `👩‍🦽 <b>【關卡二：輪椅身障體驗情境與任務】</b>：你正駕駛輪椅準備過馬路，但穿越道前後設有 <b>20cm 崁（高低落差）</b>！<br>🎯 <b>任務目標</b>：請按 <b>[↑/↓/←/→]</b> 推進輪椅體驗通過高落差時畫面伴隨的劇烈顛簸震動，並於右側點擊<b>【🗽 正義之光】➔【🚀 啟動升級鍵】</b>將高差削平為通用無障礙斜坡道！`;
+            text.innerHTML = `👩‍🦽 <b>【關卡二：身障人士第一人稱視角】</b>：你正以<b>輪椅第一人稱視角</b>推進過馬路！穿越道兩端設有 <b>20cm 崁（高低落差）</b>，缺乏斜坡時輪椅下階梯顛簸阻力極大！<br>🎯 <b>任務目標</b>：請推進輪椅體會過馬路與高低落差之艱辛阻礙，並點擊右側<b>【🗽 正義之光】➔【🚀 啟動升級鍵】</b>削平斜坡順暢通行！`;
             wheelchairGroup.visible = true;
         }
 
@@ -847,7 +881,21 @@
     // 修正：支援 [前進 forward], [後退 backward], [左轉 left], [右轉 right]
     function movePlayer(dir) {
         initAudioContext();
-        const step = 0.75;
+        let step = 0.75;
+
+        // 關卡二 (身障人士第一人稱視角) 初始狀態與高落差卡阻扣秒 (扣3秒) 難度強化
+        let isBumping = false;
+        if (currentScenario === 'wheelchair' && !symbols.justice) {
+            // 在兩端穿越道 20cm 崁 (z 介於 3.6~4.4 或 -3.6~-4.4) 推行時產生極大推行阻力、磨擦聲與扣除 3 秒
+            if ((pPos.z > 3.6 && (pPos.z - Math.cos(pRotY) * step) <= 3.8) || (pPos.z < -3.6 && (pPos.z + Math.cos(pRotY) * step) >= -3.8)) {
+                step = 0.35; // 推行阻力加大，幅度減半
+                lightTimer += 3.0; // 顛簸拖延時間，扣除 3 秒綠燈倒數！
+                playWheelchairStuckSound();
+                triggerBumpShake();
+                isBumping = true;
+            }
+        }
+
         let nextPos = pPos.clone();
 
         if (dir === 'forward') {
@@ -860,6 +908,20 @@
             pRotY += Math.PI / 4;
         } else if (dir === 'right') {
             pRotY -= Math.PI / 4;
+        }
+
+        // 增加關卡一 (視障第一人稱) 缺乏導盲磚時的行進難度與迷失偏斜
+        let isDisoriented = false;
+        if (currentScenario === 'blind' && !symbols.equity) {
+            // 無導盲磚引導時移動，方向角度產生隨機微幅偏斜 (模擬視障缺乏觸覺引導之方向迷失)
+            if (dir === 'forward' || dir === 'backward') {
+                pRotY += (Math.random() - 0.5) * 0.18;
+            }
+            // 踏入斑馬線與馬路區域 (z < 4.2 且 z > -4.2) 無導盲磚與語音時，觸發迷失警告
+            if (nextPos.z < 4.2 && nextPos.z > -4.2) {
+                isDisoriented = true;
+                playDisorientationSound();
+            }
         }
 
         if (nextPos.x < -10) nextPos.x = -10;
@@ -879,7 +941,7 @@
         if (isObstacleBlocked) {
             playObstacleBumpSound();
             triggerBumpShake();
-            updateStatus(true, false);
+            updateStatus(true, false, false);
             return; // 障礙物阻擋，無法通行！
         }
 
@@ -890,9 +952,7 @@
             return;
         }
 
-        // 修正：第一階段平等之鑰已啟動、正義之光未削平斜坡時：
-        // 下到馬路 (z=4.0 處 20cm 崁) 或 登上對側人行道 (z=-4.0 處 20cm 崁)，均觸發劇烈震動與不適感！
-        let isBumping = false;
+        // 第一階段平等之鑰已啟動、正義之光未削平斜坡時，通過 20cm 崁觸發震動
         if (symbols.equality && !symbols.justice) {
             if ((pPos.z > 3.8 && nextPos.z <= 3.8) || (pPos.z > -3.8 && nextPos.z <= -3.8)) {
                 isBumping = true;
@@ -911,7 +971,7 @@
             showSuccessModal();
         }
 
-        updateStatus(false, isBumping);
+        updateStatus(false, isBumping, isDisoriented);
         updateCameraView();
     }
 
@@ -933,23 +993,28 @@
             );
             camera.lookAt(lookTarget);
         } else {
-            camera.position.set(
-                pPos.x + Math.sin(pRotY) * 4,
-                pPos.y + 2.5,
-                pPos.z + Math.cos(pRotY) * 4
+            // 身障人士第一人稱視角 (輪椅坐姿眼睛高度 1.15m)
+            camera.position.set(pPos.x, 1.15, pPos.z);
+            const lookTarget = new THREE.Vector3(
+                pPos.x - Math.sin(pRotY) * 5,
+                1.15,
+                pPos.z - Math.cos(pRotY) * 5
             );
-            camera.lookAt(pPos.x, pPos.y + 0.8, pPos.z);
+            camera.lookAt(lookTarget);
         }
     }
 
-    function updateStatus(isBlocked, isBumping) {
+    function updateStatus(isBlocked, isBumping, isDisoriented = false) {
         const badge = document.getElementById('status-badge');
         if (isBlocked) {
             badge.className = "status-badge blocked";
             badge.innerHTML = `⛔ <b>警示：雙側騎樓遭違停機車與高低落差占用阻擋！寸步難行！請點擊【⚖️ 平等之鑰】➔【🚀 啟動升級鍵】鋪設 3D 人行道清除障礙！</b>`;
         } else if (isBumping) {
             badge.className = "status-badge warning";
-            badge.innerHTML = `⚠️ <b>通過 20cm 崁（高低落差）！畫面劇烈震動顛簸！請啟動【正義之光】削平雙側斜坡！</b>`;
+            badge.innerHTML = `⚠️ <b>顛簸拖延險境！輪椅受阻於 20cm 崁，行人號誌秒數扣除 -3 秒！請點擊【🗽 正義之光】削平雙側斜坡！</b>`;
+        } else if (isDisoriented) {
+            badge.className = "status-badge warning";
+            badge.innerHTML = `⚠️ <b>迷失警示：缺乏導盲磚與語音號誌！無法確知行走方向，極易偏離斑馬線走入車道！請啟動【📦 公平之箱】！</b>`;
         } else {
             badge.className = "status-badge clear";
             let remSec = (pedLightState === 'GREEN') ? Math.ceil(15.0 - lightTimer) : ((pedLightState === 'YELLOW') ? Math.ceil(18.0 - lightTimer) : Math.ceil(28.0 - lightTimer));
@@ -958,6 +1023,8 @@
 
             if (symbols.equity && currentScenario === 'blind') {
                 hintMsg += ` | 🧭 <b>雙側導盲磚方向確認：前方為垂直斑馬線，15秒嗶嗶語音號誌引導中！</b>`;
+            } else if (!symbols.equality && symbols.justice) {
+                hintMsg += ` | ⚠️ <b>限制提示：僅啟動正義之光仍無人行道，輪椅仍被迫行駛於危險車道！</b>`;
             }
 
             badge.innerHTML = hintMsg;
@@ -966,11 +1033,22 @@
 
     function applyTransformation() {
         initAudioContext();
+
+        // 1. 同理心感知點數動態遞增/遞減計算 (依據啟動項目與數量)
+        let empathy = 100; // 初始現狀基礎同理心點數
+        if (symbols.equality) empathy += 150;
+        if (symbols.equity) empathy += 200;
+        if (symbols.justice) empathy += 250;
+        if (symbols.equality && symbols.equity && symbols.justice) empathy += 100; // 完整通用平權連鎖加成
+
+        document.getElementById('val-empathy').innerText = `+${empathy} Pt`;
+
+        // 2. 評估三階段組合條件與限制 (僅啟動第三階段無法完美通用無障礙)
         let frustration = 95;
         let level = "Level 0 (連人行道都沒有)";
 
         if (symbols.equality) {
-            frustration -= 20;
+            frustration -= 25;
             arcadeObstaclesGroup.visible = false; // 清除騎樓違停機車與障礙！
             sidewalkStartMesh.visible = true;    // 馬路兩側鋪設基礎 3D 人行道！
             sidewalkDestMesh.visible = true;
@@ -983,16 +1061,25 @@
 
         if (symbols.equity) {
             frustration -= 30;
-            fullTactileGroup.visible = true; // 全線鋪滿黃色導盲磚！
+            fullTactileGroup.visible = true; // 兩側鋪滿黃色導盲磚！
             playBeepSound();
-            level = "Level 2 (全線導盲磚與語音號誌)";
+            level = symbols.equality ? "Level 2 (人行道+導盲磚與語音號誌)" : "Level 1 (僅導盲磚，缺乏人行道防護)";
         } else {
             fullTactileGroup.visible = false;
         }
 
         if (symbols.justice) {
-            frustration -= 35;
-            level = "Level 4 (完美通用無障礙)";
+            // 僅啟動正義之光 (第三階段) 無法取代基礎人行道與導盲磚！
+            if (symbols.equality && symbols.equity) {
+                frustration = 0;
+                level = "Level 3 (完美通用無障礙路口)";
+            } else if (symbols.equality) {
+                frustration -= 20;
+                level = "Level 2.5 (有斜坡與人行道，仍缺導盲磚與語音)";
+            } else {
+                frustration -= 15;
+                level = "Level 0.5 (僅有斜坡，仍缺乏基礎人行道與防護)";
+            }
         }
 
         if (frustration < 0) frustration = 0;
@@ -1070,6 +1157,30 @@
     }
 
     function showSuccessModal() {
+        const bodyEl = document.querySelector('#success-modal .modal-body');
+        if (bodyEl) {
+            const activeCount = (symbols.equality ? 1 : 0) + (symbols.equity ? 1 : 0) + (symbols.justice ? 1 : 0);
+
+            if (activeCount === 0) {
+                bodyEl.innerHTML = `
+                    <b>⚠️ 你在「完全沒有任何平權升級 (連人行道都沒有)」的極危險現狀下穿越了馬路！</b><br><br>
+                    雖然順利通過，但在現實生活中，<b>缺乏人行道、無語音號誌、且穿越道存在 20cm 高低落差</b>時，身障與視障朋友過馬路極度危險且尊嚴受損！<br><br>
+                    💡 <b>學習反思引導</b>：請嘗試勾選右側的<b>【⚖️ 平等之鑰】</b>、<b>【📦 公平之箱】</b>或<b>【🗽 正義之光】</b>，並點擊<b>【🚀 啟動升級鍵】</b>進行三階段改造，思考如何才能讓身障者更安全、順暢過馬路！
+                `;
+            } else if (activeCount === 1) {
+                bodyEl.innerHTML = `
+                    <b>💡 你僅選擇了「單一階段」平權升級，環境仍存在顯著的危險與不便！</b><br><br>
+                    雖然單一設施有所改善，但若<b>缺乏基礎人行道（車道險象）、缺乏導盲磚與語音號誌（視障迷失），或缺乏斜坡（輪椅顛簸扣秒）</b>，依然無法真正達到通用無障礙。<br><br>
+                    💡 <b>學習反思引導</b>：請嘗試組合勾選右側其他<b>平權象徵物</b>並點擊<b>【🚀 啟動升級鍵】</b>，思考如何將多重平權設施互相搭配，才能讓身障者與視障者更安全、自主地過馬路！
+                `;
+            } else {
+                bodyEl.innerHTML = `
+                    <b>感謝你願意站在身障者的視角與立場體驗！</b><br><br>
+                    透過這次體驗，我們發現：<b>當沒有人行道、騎樓遭違停占用，且對側人行道同樣存在 20cm 崁（高低落差）時，身障者過馬路極度艱辛危險</b>。<br><br>
+                    實踐<b>實質平權 (Equity)</b> 與<b>消除環境障礙 (Justice)</b>，是我們每一位地球公民的責任。讓我們共同消除不平等 (SDG 10)，打造通用無障礙的永續城鄉 (SDG 11)！
+                `;
+            }
+        }
         document.getElementById('success-modal').style.display = 'flex';
     }
 
