@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 沉浸式：無障礙過馬路與雙側高低落差體驗網頁</title>
+
+    <!-- 載入 Three.js 3D 引擎 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #006747;
+            --primary-hover: #004D34;
+            --accent-blue: #0055B8;
+            --accent-red: #C00000;
+            --accent-yellow: #D97706;
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --text-light: #F8FAFC;
+            --border-radius: 14px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            margin: 0;
+            padding: 12px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1380px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 16px 20px;
+            border-radius: 18px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #4ADE80;
+            margin: 0 0 2px 0;
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .subtitle { color: #94A3B8; font-size: 13px; }
+
+        /* 情境帶入說明區塊 */
+        .story-intro {
+            background: #0F172A;
+            border-left: 4px solid #F59E0B;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #FEF3C7;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        /* 雙欄 layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 14px;
+            align-items: start;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 關卡與視角選擇 */
+        .scenario-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border: 2px solid #475569;
+            border-radius: var(--border-radius);
+            background: #0F172A;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #94A3B8;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            border-color: #4ADE80;
+            background: #064E3B;
+            color: #4ADE80;
+            box-shadow: 0 0 12px rgba(74,222,128,0.2);
+        }
+
+        .info-banner {
+            background: #1E3A8A;
+            border-left: 4px solid #38BDF8;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            color: #E0F2FE;
+        }
+
+        /* 3D Viewport - 調整高度 360px 以防產生滾動條 */
+        .viewport-3d {
+            position: relative;
+            width: 100%;
+            height: 360px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 2px solid #475569;
+            background: #000;
+            transition: transform 0.1s ease;
+        }
+
+        /* 行人號誌 15 秒倒數 HUD 燈箱 */
+        .ped-light-hud {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid #4ADE80;
+            border-radius: 10px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        .ped-light-hud.red-phase { border-color: #EF4444; }
+        .ped-light-hud.yellow-phase { border-color: #F59E0B; }
+        .ped-icon-box { font-size: 22px; line-height: 1; }
+        .ped-timer-text {
+            font-size: 20px; font-weight: 800; color: #4ADE80;
+            font-family: monospace; min-width: 45px; text-align: right;
+        }
+        .ped-hud-label { font-size: 11px; color: #94A3B8; font-weight: bold; }
+
+        /* 畫面顛簸震動特效 */
+        .viewport-3d.shake-effect { animation: bumpShake 0.4s ease infinite; }
+        @keyframes bumpShake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-3px, -3px); }
+            80% { transform: translate(3px, 3px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* 視障第一人稱遮罩 */
+        .viewport-3d.blind-mode::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 4%, rgba(0,0,0,0.97) 36%);
+            backdrop-filter: blur(16px);
+            pointer-events: none;
+        }
+
+        #canvas3d { width: 100%; height: 100%; display: block; }
+
+        /* 操作面板 */
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            background: #0F172A;
+            padding: 8px 14px;
+            border-radius: var(--border-radius);
+            border: 1px solid #334155;
+        }
+
+        .btn-move {
+            padding: 7px 12px;
+            font-size: 13.5px;
+            font-weight: bold;
+            background: var(--accent-blue);
+            color: #FFF;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-move:hover { background: #0284C7; }
+
+        .status-badge {
+            font-size: 12.5px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+
+        .status-badge.blocked { background: #7F1D1D; color: #FECACA; border: 1.5px solid #EF4444; }
+        .status-badge.clear { background: #064E3B; color: #A7F3D0; border: 1.5px solid #10B981; }
+        .status-badge.warning { background: #78350F; color: #FEF3C7; border: 1.5px solid #F59E0B; }
+
+        /* 儀表板 */
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .dash-card {
+            background: #0F172A; padding: 8px 10px; border-radius: var(--border-radius);
+            text-align: center; border-top: 3px solid #4ADE80;
+        }
+
+        .dash-title { font-size: 11.5px; color: #94A3B8; }
+        .dash-val { font-size: 19px; font-weight: 800; margin-top: 2px; }
+
+        /* 右側象徵物解鎖直欄 */
+        .symbols-box {
+            background: #0F172A;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            border: 1.5px solid #38BDF8;
+        }
+
+        .symbols-title {
+            font-size: 15px; font-weight: bold; color: #38BDF8; margin-top: 0;
+            margin-bottom: 8px; text-align: center;
+        }
+
+        .symbols-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .symbol-card {
+            background: #1E293B; padding: 10px 12px; border-radius: var(--border-radius);
+            border: 2px solid #334155; cursor: pointer; text-align: left; transition: 0.3s;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .symbol-card:hover { border-color: #38BDF8; }
+        .symbol-card.active { border-color: #4ADE80; background: #064E3B; }
+
+        .symbol-icon { font-size: 26px; flex-shrink: 0; }
+        .symbol-name { font-size: 13.5px; font-weight: bold; margin-bottom: 2px; color: #F8FAFC; }
+        .symbol-desc { font-size: 11.5px; color: #94A3B8; line-height: 1.35; }
+
+        .btn-upgrade {
+            width: 100%; padding: 11px; background: #059669; color: #FFF;
+            font-size: 15.5px; font-weight: bold; border: none; border-radius: var(--border-radius);
+            cursor: pointer; margin-top: 10px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+        }
+        .btn-upgrade:hover { background: #047857; }
+
+        /* 心得單 */
+        .reflection-box {
+            background: #1E293B; padding: 12px; border-radius: var(--border-radius);
+            border: 1px solid #475569;
+        }
+
+        textarea {
+            width: 100%; height: 60px; padding: 8px; background: #0F172A; color: #FFF;
+            border: 1px solid #475569; border-radius: 8px; font-family: inherit; font-size: 12.5px; margin-bottom: 8px;
+        }
+
+        .btn-export {
+            background: #D97706; color: #FFF; padding: 8px 14px; border: none;
+            border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; width: 100%;
+        }
+
+        /* Modal 視窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #1E293B;
+            border: 3px solid #4ADE80;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 520px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(74,222,128,0.4);
+            animation: popIn 0.4s ease;
+        }
+
+        .modal-content.danger-modal {
+            border-color: #EF4444;
+            box-shadow: 0 0 30px rgba(239,68,68,0.5);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-icon { font-size: 48px; margin-bottom: 6px; }
+        .modal-title { font-size: 21px; font-weight: 800; color: #4ADE80; margin-bottom: 10px; }
+        .modal-title.danger-title { color: #EF4444; }
+        .modal-body { font-size: 14.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 16px; text-align: left; }
+        .btn-close-modal {
+            padding: 10px 24px; background: #059669; color: #FFF; font-size: 15px;
+            font-weight: bold; border: none; border-radius: 10px; cursor: pointer;
+        }
+        .btn-close-modal.danger-btn { background: #DC2626; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏛️ 🚦 3D 沉浸式：無障礙過馬路與雙側高低落差體驗網頁</h1>
+        <div class="subtitle">新北市龍埔國小 六年級校訂國際教育 (SDG 10 & SDG 11) 實境體驗模組</div>
+    </header>
+
+    <!-- 標題下情境帶入說明區塊 -->
+    <div class="story-intro">
+        <b>📖 【情境帶入】：</b>想像你是一位視障或肢障的平權體驗者。你正站在忙碌的城市街頭準備跨越路口，眼前雙側騎樓遭違停機車堵死、高低落差顯著，路邊甚至「連人行道都沒有」！請親身操作方向鍵體會弱勢行人的危險與無助，並運用右側<b>平權象徵物</b>解鎖改造包容城鄉。
+    </div>
+
+    <!-- 雙欄主佈局 -->
+    <div class="main-layout">
+        <!-- 左側直欄：關卡選擇、3D Viewport 與操縱面板 -->
+        <div class="left-column">
+            <!-- 1. 關卡與視角選擇 (刪除暗黑第一人稱文字) -->
+            <div class="scenario-tabs">
+                <button class="tab-btn active" id="tab-blind" onclick="setScenario('blind')">
+                    👨‍🦯 關卡一：視障第一人稱視角<br><small>(按【公平之箱】全線鋪設 3D 導盲磚與嗶嗶號誌音)</small>
+                </button>
+                <button class="tab-btn" id="tab-wheelchair" onclick="setScenario('wheelchair')">
+                    👩‍🦽 關卡二：輪椅 3D 建模與視角<br><small>(3D 輪椅轉向 / 雙側 20cm 崁震動 / 正義之光削平斜坡)</small>
+                </button>
+            </div>
+
+            <!-- 情境導引說明 -->
+            <div class="info-banner" id="info-text">
+                👨‍🦯 <b>【關卡一：視障體驗情境與任務】</b>：你眼前是一片漆黑，且耳邊預設<b>完全聽不到號誌聲響</b>！<br>🎯 <b>任務目標</b>：請嘗試前進感受迷失與車流危險，並於右側點擊<b>【📦 公平之箱】➔【🚀 啟動升級鍵】</b>解鎖 3D 黃色導盲磚與 15 秒嗶嗶語音號誌，聽聲辨位安全過馬路！
+            </div>
+
+            <!-- 2. 3D Viewport -->
+            <div class="viewport-3d blind-mode" id="viewport-3d">
+                <!-- 15秒行人號誌 HUD 燈箱 -->
+                <div class="ped-light-hud" id="ped-light-hud">
+                    <div class="ped-icon-box" id="ped-hud-icon">🚶🟢</div>
+                    <div>
+                        <div class="ped-hud-label">行人號誌 (15秒)</div>
+                        <div class="ped-timer-text" id="ped-hud-timer">15s</div>
+                    </div>
+                </div>
+                <canvas id="canvas3d"></canvas>
+            </div>
+
+            <!-- 3. 操作列 -->
+            <div class="controls-bar">
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-move" onclick="movePlayer('forward')">⬆️ 前進</button>
+                    <button class="btn-move" onclick="movePlayer('backward')">⬇️ 後退</button>
+                    <button class="btn-move" onclick="movePlayer('left')">⬅️ 左轉</button>
+                    <button class="btn-move" onclick="movePlayer('right')">右轉 ➡️</button>
+                </div>
+                <div class="status-badge clear" id="status-badge">ℹ️ 支援 `[↑/W]` `[↓/S]` `[←/A]` `[→/D]`</div>
+            </div>
+
+            <!-- 4. 數據儀表板 -->
+            <div class="dash-grid">
+                <div class="dash-card">
+                    <div class="dash-title">過馬路險境指數</div>
+                    <div class="dash-val" id="val-frustration" style="color: #EF4444;">95% (無人行道險境)</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-title">同理心感知點數</div>
+                    <div class="dash-val" id="val-empathy" style="color: #38BDF8;">+420 Pt</div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-title">3D 動態路口無障礙等級</div>
+                    <div class="dash-val" id="val-level" style="color: #4ADE80;">Level 0 (連人行道都沒有)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側直欄：三階段平權象徵物與反思學習單 -->
+        <div class="right-column">
+            <!-- 5. 象徵物解鎖區 (移至右側直欄) -->
+            <div class="symbols-box">
+                <div class="symbols-title">✨ 請選擇三階段平權象徵物：</div>
+                <div class="symbols-grid">
+                    <div class="symbol-card" id="sym-equality" onclick="toggleSymbol('equality')">
+                        <div class="symbol-icon">⚖️</div>
+                        <div>
+                            <div class="symbol-name">【第一階段】平等之鑰 (Equality)</div>
+                            <div class="symbol-desc">騎樓違停障礙清除，<b>馬路雙側鋪設 3D 基礎人行道</b>！(穿越道前後皆有 20cm 崁，震動不適)。</div>
+                        </div>
+                    </div>
+                    <div class="symbol-card" id="sym-equity" onclick="toggleSymbol('equity')">
+                        <div class="symbol-icon">📦</div>
+                        <div>
+                            <div class="symbol-name">【第二階段】公平之箱 (Equity)</div>
+                            <div class="symbol-desc"><b>雙側人行道全線橫縱鋪滿 3D 黃色導盲磚</b>！綠燈響起<b>15秒號誌倒數</b>與真實嗶嗶語音！</div>
+                        </div>
+                    </div>
+                    <div class="symbol-card" id="sym-justice" onclick="toggleSymbol('justice')">
+                        <div class="symbol-icon">🗽</div>
+                        <div>
+                            <div class="symbol-name">【第三階段】正義之光 (Justice)</div>
+                            <div class="symbol-desc">穿越道兩側 20cm 崁<b>削平為通用無障礙斜坡道</b>，輪椅順暢通行過馬路，震動消除！</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-upgrade" onclick="applyTransformation()">🚀 啟動升級鍵</button>
+            </div>
+
+            <!-- 6. 學習單導出 -->
+            <div class="reflection-box">
+                <div style="font-weight:bold; color:#FBBF24; margin-bottom:6px; font-size: 13px;">✏️ 課堂心得與 3D 無障礙反思：</div>
+                <textarea id="reflection-input" placeholder="寫下你在騎樓無人行道過馬路、20cm崁顛簸以及削平斜坡的心得..."></textarea>
+                <button class="btn-export" onclick="window.print()">🖨️ 列印 / 導出學習單</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 7. 通關成功 Modal 視窗 -->
+<div class="modal-overlay" id="success-modal">
+    <div class="modal-content">
+        <div class="modal-icon">🌟🎉</div>
+        <div class="modal-title">恭喜你順利通過 3D 無障礙路口！</div>
+        <div class="modal-body">
+            <b>感謝你願意站在身障者的視角與立場體驗！</b><br><br>
+            透過這次體驗，我們發現：<b>當沒有人行道、騎樓遭違停占用，且對側人行道同樣存在 20cm 崁（高低落差）時，身障者過馬路極度艱辛危險</b>。<br><br>
+            實踐<b>實質平權 (Equity)</b> 與<b>消除環境障礙 (Justice)</b>，是我們每一位地球公民的責任。讓我們共同消除不平等 (SDG 10)，打造通用無障礙的永續城鄉 (SDG 11)！
+        </div>
+        <button class="btn-close-modal" onclick="closeModal('success-modal')">❤️ 我明白了，繼續關懷平權</button>
+    </div>
+</div>
+
+<!-- 8. 危險車流碰撞 Modal 視窗 -->
+<div class="modal-overlay" id="danger-modal">
+    <div class="modal-content danger-modal">
+        <div class="modal-icon">⚠️💥</div>
+        <div class="modal-title danger-title">危險！紅燈/黃燈強行穿越造成危害！</div>
+        <div class="modal-body">
+            <b>你在紅燈/黃燈車流高速通過時強行穿越斑馬線，遭到汽車擦撞！</b><br><br>
+            對於視障者或聽障者而言，在缺乏清楚語音號誌（嗶嗶聲）的提示下，<b>強行過馬路可能會帶來致命的生命威脅</b>！<br><br>
+            這正是為什麼我們必須建置<b>語音紅綠燈 (公平之箱)</b> 與<b>庇護島斜坡 (正義之光)</b> 的重要原因！
+        </div>
+        <button class="btn-close-modal danger-btn" onclick="closeModal('danger-modal')">⚠️ 我知道了，返回安全區域</button>
+    </div>
+</div>
+
+<script>
+    // --- WEB AUDIO API 聲響合成器 ---
+    let audioCtx = null;
+
+    function initAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playBeepSound() {
+        if (!symbols.equity || pedLightState !== 'GREEN') return; // 未啟動公平之箱或非綠燈時完全靜音！
+        initAudioContext();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, now);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+    }
+
+    function playCrashSound() {
+        initAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(120, now);
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+    }
+
+    function playObstacleBumpSound() {
+        initAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+    }
+
+    setInterval(() => {
+        if (symbols.equity && pedLightState === 'GREEN') {
+            playBeepSound();
+        }
+    }, 1000);
+
+
+    // --- 3D THREE.JS 建模與動態車流/紅綠燈連動系統 ---
+    let scene, camera, renderer;
+    let wheelchairGroup;
+    let arcadeObstaclesGroup;
+    let sidewalkStartMesh, sidewalkDestMesh; // 馬路兩側 3D 人行道
+    let fullTactileGroup; // 公平之箱全線黃色導盲磚
+    let pedLampMeshGreen, pedLampMeshRed;
+    let carMeshes = [];
+
+    let currentScenario = 'blind';
+    let pPos = new THREE.Vector3(0, 0.5, 7); // 玩家 3D 座標
+    let pRotY = 0; // 3D 轉向角
+
+    let pedLightState = 'GREEN';
+    let lightTimer = 0;
+
+    let symbols = { equality: false, equity: false, justice: false };
+    let hasCompleted = false;
+
+    function init3D() {
+        const viewport = document.getElementById('viewport-3d');
+        const width = viewport.clientWidth;
+        const height = viewport.clientHeight;
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0F172A);
+        scene.fog = new THREE.FogExp2(0x0F172A, 0.02);
+
+        camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas3d'), antialias: true });
+        renderer.setSize(width, height);
+        renderer.shadowMap.enabled = true;
+
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+        dirLight.position.set(15, 25, 10);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        create3DEnvironment();
+        create3DTraffic();
+        create3DWheelchair();
+        updateCameraView();
+        animate();
+    }
+
+    function create3DEnvironment() {
+        // 1. 馬路 (Road)
+        const roadGeo = new THREE.PlaneGeometry(40, 8);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.position.set(0, -0.01, 0);
+        scene.add(road);
+
+        // 斑馬線 (Zebra Crossing)
+        for (let z = -3.2; z <= 3.2; z += 1.2) {
+            const zStripeGeo = new THREE.PlaneGeometry(4, 0.6);
+            const zStripeMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+            const stripe = new THREE.Mesh(zStripeGeo, zStripeMat);
+            stripe.rotation.x = -Math.PI / 2;
+            stripe.position.set(0, 0.02, z);
+            scene.add(stripe);
+        }
+
+        // 2. 雙側騎樓建築物與高低落差 (Arcade Roof & Pillars on BOTH sides - 柱子避開 x=0 穿越道口)
+        const arcadeRoofGeo = new THREE.BoxGeometry(40, 0.4, 6);
+        const arcadeRoofMat = new THREE.MeshStandardMaterial({ color: 0x1E293B });
+
+        const roofStart = new THREE.Mesh(arcadeRoofGeo, arcadeRoofMat);
+        roofStart.position.set(0, 5.2, 6);
+        scene.add(roofStart);
+
+        const roofDest = new THREE.Mesh(arcadeRoofGeo, arcadeRoofMat);
+        roofDest.position.set(0, 5.2, -6);
+        scene.add(roofDest);
+
+        const pillarPositions = [-12, -6, 6, 12]; // 嚴格避開 x=0 穿越道口 (x=-3~3 保持無柱子擋道)
+        pillarPositions.forEach(px => {
+            const pillarGeo = new THREE.BoxGeometry(0.8, 5, 0.8);
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+
+            // 起始側柱子
+            const pillarStart = new THREE.Mesh(pillarGeo, pillarMat);
+            pillarStart.position.set(px, 2.5, 3.2);
+            scene.add(pillarStart);
+
+            // 對側柱子
+            const pillarDest = new THREE.Mesh(pillarGeo, pillarMat);
+            pillarDest.position.set(px, 2.5, -3.2);
+            scene.add(pillarDest);
+        });
+
+        // 初始現狀雙側騎樓障礙物：兩側皆滿布違停機車與高低落差階梯
+        arcadeObstaclesGroup = new THREE.Group();
+        const stepGeo = new THREE.BoxGeometry(40, 0.35, 0.5);
+        const stepMat = new THREE.MeshStandardMaterial({ color: 0x78350F });
+
+        // 起始側階梯落差
+        const arcadeStepStart = new THREE.Mesh(stepGeo, stepMat);
+        arcadeStepStart.position.set(0, 0.175, 5.2);
+        arcadeObstaclesGroup.add(arcadeStepStart);
+
+        // 對側階梯落差
+        const arcadeStepDest = new THREE.Mesh(stepGeo, stepMat);
+        arcadeStepDest.position.set(0, 0.175, -5.2);
+        arcadeObstaclesGroup.add(arcadeStepDest);
+
+        const scooterGeo = new THREE.BoxGeometry(1.6, 1.2, 0.8);
+        const scooterMat = new THREE.MeshStandardMaterial({ color: 0xDC2626 });
+        const scooterPos = [-8, -4, -1.8, 1.8, 4.5, 8.5];
+
+        // 雙側騎樓鋪滿違停機車 (使騎樓寸步難行)
+        scooterPos.forEach(sx => {
+            const scooterStart = new THREE.Mesh(scooterGeo, scooterMat);
+            scooterStart.position.set(sx, 0.6, 6.2);
+            arcadeObstaclesGroup.add(scooterStart);
+
+            const scooterDest = new THREE.Mesh(scooterGeo, scooterMat);
+            scooterDest.position.set(sx, 0.6, -6.2);
+            arcadeObstaclesGroup.add(scooterDest);
+        });
+        scene.add(arcadeObstaclesGroup);
+
+        // 3. 第一階段平等之鑰：馬路兩側皆鋪設 3D 基礎人行道 (Sidewalks on BOTH sides)
+        const sidewalkGeo = new THREE.BoxGeometry(40, 0.4, 4);
+        const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x64748B });
+
+        sidewalkStartMesh = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+        sidewalkStartMesh.position.set(0, 0.2, 6);
+        sidewalkStartMesh.visible = false; // 初始連人行道都沒有
+        scene.add(sidewalkStartMesh);
+
+        sidewalkDestMesh = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+        sidewalkDestMesh.position.set(0, 0.2, -6);
+        sidewalkDestMesh.visible = false; // 初始連人行道都沒有
+        scene.add(sidewalkDestMesh);
+
+        // 4. 第二階段公平之箱：兩側人行道全線橫向與縱向鋪滿 3D 黃色導盲磚 (Tactile tiles on BOTH sides)
+        fullTactileGroup = new THREE.Group();
+        // 起始側人行道 (z = 6) 橫向導盲磚
+        for (let tx = -18; tx <= 18; tx += 0.8) {
+            const tileGeo = new THREE.PlaneGeometry(0.6, 0.6);
+            const tileMat = new THREE.MeshStandardMaterial({ color: 0xF1C40F });
+            const tile = new THREE.Mesh(tileGeo, tileMat);
+            tile.rotation.x = -Math.PI / 2;
+            tile.position.set(tx, 0.41, 6);
+            fullTactileGroup.add(tile);
+        }
+        // 起始側人行道 (z = 6) 縱向引導導盲磚
+        for (let tz = 7.5; tz >= 4.2; tz -= 0.6) {
+            const tileGeo = new THREE.PlaneGeometry(0.6, 0.6);
+            const tileMat = new THREE.MeshStandardMaterial({ color: 0xF1C40F });
+            const tile = new THREE.Mesh(tileGeo, tileMat);
+            tile.rotation.x = -Math.PI / 2;
+            tile.position.set(0, 0.41, tz);
+            fullTactileGroup.add(tile);
+        }
+
+        // 對側人行道 (z = -6) 橫向導盲磚
+        for (let tx = -18; tx <= 18; tx += 0.8) {
+            const tileGeo = new THREE.PlaneGeometry(0.6, 0.6);
+            const tileMat = new THREE.MeshStandardMaterial({ color: 0xF1C40F });
+            const tile = new THREE.Mesh(tileGeo, tileMat);
+            tile.rotation.x = -Math.PI / 2;
+            tile.position.set(tx, 0.41, -6);
+            fullTactileGroup.add(tile);
+        }
+        // 對側人行道 (z = -6) 縱向引導導盲磚 (銜接斑馬線)
+        for (let tz = -4.2; tz >= -7.5; tz -= 0.6) {
+            const tileGeo = new THREE.PlaneGeometry(0.6, 0.6);
+            const tileMat = new THREE.MeshStandardMaterial({ color: 0xF1C40F });
+            const tile = new THREE.Mesh(tileGeo, tileMat);
+            tile.rotation.x = -Math.PI / 2;
+            tile.position.set(0, 0.41, tz);
+            fullTactileGroup.add(tile);
+        }
+
+        fullTactileGroup.visible = false;
+        scene.add(fullTactileGroup);
+
+        // 5. 行人專用號誌燈桿與行人燈箱
+        const poleGeo = new THREE.CylinderGeometry(0.12, 0.12, 5);
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        pole.position.set(3.5, 2.5, 4);
+        scene.add(pole);
+
+        const pedBoxGeo = new THREE.BoxGeometry(0.6, 1.2, 0.5);
+        const pedBoxMat = new THREE.MeshStandardMaterial({ color: 0x1E293B });
+        const pedBox = new THREE.Mesh(pedBoxGeo, pedBoxMat);
+        pedBox.position.set(3.5, 3.8, 4);
+        scene.add(pedBox);
+
+        const redLampGeo = new THREE.SphereGeometry(0.2, 16, 16);
+        const redLampMat = new THREE.MeshBasicMaterial({ color: 0x334155 });
+        pedLampMeshRed = new THREE.Mesh(redLampGeo, redLampMat);
+        pedLampMeshRed.position.set(3.5, 4.1, 4.3);
+        scene.add(pedLampMeshRed);
+
+        const greenLampGeo = new THREE.SphereGeometry(0.2, 16, 16);
+        const greenLampMat = new THREE.MeshBasicMaterial({ color: 0x10B981 });
+        pedLampMeshGreen = new THREE.Mesh(greenLampGeo, greenLampMat);
+        pedLampMeshGreen.position.set(3.5, 3.5, 4.3);
+        scene.add(pedLampMeshGreen);
+    }
+
+    function create3DTraffic() {
+        const carColors = [0xEF4444, 0x3B82F6, 0xEAB308];
+        for (let i = 0; i < 3; i++) {
+            const carGroup = new THREE.Group();
+            const bodyGeo = new THREE.BoxGeometry(2.5, 1.0, 1.4);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: carColors[i] });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.5;
+            carGroup.add(body);
+
+            carGroup.position.set(-15 + i * 10, 0, (i % 2 === 0 ? 1.8 : -1.8));
+            carGroup.userData = { speed: 0.12 + i * 0.03 };
+            carMeshes.push(carGroup);
+            scene.add(carGroup);
+        }
+    }
+
+    function create3DWheelchair() {
+        wheelchairGroup = new THREE.Group();
+
+        const wheelGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.1, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1E293B });
+
+        const wheelL = new THREE.Mesh(wheelGeo, wheelMat);
+        wheelL.rotation.z = Math.PI / 2;
+        wheelL.position.set(-0.5, 0.55, 0);
+        wheelchairGroup.add(wheelL);
+
+        const wheelR = new THREE.Mesh(wheelGeo, wheelMat);
+        wheelR.rotation.z = Math.PI / 2;
+        wheelR.position.set(0.5, 0.55, 0);
+        wheelchairGroup.add(wheelR);
+
+        const seatGeo = new THREE.BoxGeometry(0.85, 0.1, 0.85);
+        const seatMat = new THREE.MeshStandardMaterial({ color: 0x0284C7 });
+        const seat = new THREE.Mesh(seatGeo, seatMat);
+        seat.position.set(0, 0.65, 0);
+        wheelchairGroup.add(seat);
+
+        const headGeo = new THREE.SphereGeometry(0.28, 16, 16);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xFDBA74 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.set(0, 1.6, 0.1);
+        wheelchairGroup.add(head);
+
+        wheelchairGroup.position.copy(pPos);
+        scene.add(wheelchairGroup);
+    }
+
+    function setScenario(scenario) {
+        currentScenario = scenario;
+        pPos.set(0, 0.5, 7);
+        pRotY = 0; // 面向過馬路方向 (-Z)
+
+        document.getElementById('tab-blind').classList.remove('active');
+        document.getElementById('tab-wheelchair').classList.remove('active');
+
+        const viewport = document.getElementById('viewport-3d');
+        const text = document.getElementById('info-text');
+
+        if (scenario === 'blind') {
+            document.getElementById('tab-blind').classList.add('active');
+            viewport.classList.add('blind-mode');
+            text.innerHTML = `👨‍🦯 <b>【關卡一：視障體驗情境與任務】</b>：你眼前是一片漆黑，且耳邊預設<b>完全聽不到號誌聲響</b>！<br>🎯 <b>任務目標</b>：請嘗試前進感受迷失與車流危險，並於右側點擊<b>【📦 公平之箱】➔【🚀 啟動升級鍵】</b>解鎖 3D 黃色導盲磚與 15 秒嗶嗶語音號誌，聽聲辨位安全過馬路！`;
+            wheelchairGroup.visible = false;
+        } else {
+            document.getElementById('tab-wheelchair').classList.add('active');
+            viewport.classList.remove('blind-mode');
+            text.innerHTML = `👩‍🦽 <b>【關卡二：輪椅身障體驗情境與任務】</b>：你正駕駛輪椅準備過馬路，但穿越道前後設有 <b>20cm 崁（高低落差）</b>！<br>🎯 <b>任務目標</b>：請按 <b>[↑/↓/←/→]</b> 推進輪椅體驗通過高落差時畫面伴隨的劇烈顛簸震動，並於右側點擊<b>【🗽 正義之光】➔【🚀 啟動升級鍵】</b>將高差削平為通用無障礙斜坡道！`;
+            wheelchairGroup.visible = true;
+        }
+
+        updateCameraView();
+        updateStatus(false, false);
+    }
+
+    function toggleSymbol(sym) {
+        symbols[sym] = !symbols[sym];
+        document.getElementById('sym-' + sym).classList.toggle('active');
+    }
+
+    // 修正：支援 [前進 forward], [後退 backward], [左轉 left], [右轉 right]
+    function movePlayer(dir) {
+        initAudioContext();
+        const step = 0.75;
+        let nextPos = pPos.clone();
+
+        if (dir === 'forward') {
+            nextPos.z -= Math.cos(pRotY) * step;
+            nextPos.x -= Math.sin(pRotY) * step;
+        } else if (dir === 'backward') {
+            nextPos.z += Math.cos(pRotY) * step;
+            nextPos.x += Math.sin(pRotY) * step;
+        } else if (dir === 'left') {
+            pRotY += Math.PI / 4;
+        } else if (dir === 'right') {
+            pRotY -= Math.PI / 4;
+        }
+
+        if (nextPos.x < -10) nextPos.x = -10;
+        if (nextPos.x > 10) nextPos.x = 10;
+        if (nextPos.z > 8) nextPos.z = 8;
+        if (nextPos.z < -8) nextPos.z = -8;
+
+        // 初始現狀障礙檢測 (!symbols.equality 時，雙側騎樓遭違停機車與高低落差占用阻擋):
+        let isObstacleBlocked = false;
+        if (!symbols.equality) {
+            // 在騎樓區域 (z >= 5.0 或 z <= -5.0) 嘗試左右移動碰觸機車，或試圖走入機車違停區
+            if ((nextPos.z >= 5.0 || nextPos.z <= -5.0) && Math.abs(nextPos.x) > 0.8) {
+                isObstacleBlocked = true;
+            }
+        }
+
+        if (isObstacleBlocked) {
+            playObstacleBumpSound();
+            triggerBumpShake();
+            updateStatus(true, false);
+            return; // 障礙物阻擋，無法通行！
+        }
+
+        // 危險條件：紅燈或黃燈時強行過馬路踏入車道區
+        if ((pedLightState === 'RED' || pedLightState === 'YELLOW') && nextPos.z < 3.8 && nextPos.z > -3.8) {
+            playCrashSound();
+            showDangerModal();
+            return;
+        }
+
+        // 修正：第一階段平等之鑰已啟動、正義之光未削平斜坡時：
+        // 下到馬路 (z=4.0 處 20cm 崁) 或 登上對側人行道 (z=-4.0 處 20cm 崁)，均觸發劇烈震動與不適感！
+        let isBumping = false;
+        if (symbols.equality && !symbols.justice) {
+            if ((pPos.z > 3.8 && nextPos.z <= 3.8) || (pPos.z > -3.8 && nextPos.z <= -3.8)) {
+                isBumping = true;
+                triggerBumpShake();
+            }
+        }
+
+        pPos.copy(nextPos);
+        if (wheelchairGroup) {
+            wheelchairGroup.position.copy(pPos);
+            wheelchairGroup.rotation.y = pRotY;
+        }
+
+        if (pPos.z <= -5.5 && !hasCompleted) {
+            hasCompleted = true;
+            showSuccessModal();
+        }
+
+        updateStatus(false, isBumping);
+        updateCameraView();
+    }
+
+    function triggerBumpShake() {
+        const viewport = document.getElementById('viewport-3d');
+        viewport.classList.add('shake-effect');
+        setTimeout(() => {
+            viewport.classList.remove('shake-effect');
+        }, 500);
+    }
+
+    function updateCameraView() {
+        if (currentScenario === 'blind') {
+            camera.position.set(pPos.x, 1.6, pPos.z);
+            const lookTarget = new THREE.Vector3(
+                pPos.x - Math.sin(pRotY) * 5,
+                1.6,
+                pPos.z - Math.cos(pRotY) * 5
+            );
+            camera.lookAt(lookTarget);
+        } else {
+            camera.position.set(
+                pPos.x + Math.sin(pRotY) * 4,
+                pPos.y + 2.5,
+                pPos.z + Math.cos(pRotY) * 4
+            );
+            camera.lookAt(pPos.x, pPos.y + 0.8, pPos.z);
+        }
+    }
+
+    function updateStatus(isBlocked, isBumping) {
+        const badge = document.getElementById('status-badge');
+        if (isBlocked) {
+            badge.className = "status-badge blocked";
+            badge.innerHTML = `⛔ <b>警示：雙側騎樓遭違停機車與高低落差占用阻擋！寸步難行！請點擊【⚖️ 平等之鑰】➔【🚀 啟動升級鍵】鋪設 3D 人行道清除障礙！</b>`;
+        } else if (isBumping) {
+            badge.className = "status-badge warning";
+            badge.innerHTML = `⚠️ <b>通過 20cm 崁（高低落差）！畫面劇烈震動顛簸！請啟動【正義之光】削平雙側斜坡！</b>`;
+        } else {
+            badge.className = "status-badge clear";
+            let remSec = (pedLightState === 'GREEN') ? Math.ceil(15.0 - lightTimer) : ((pedLightState === 'YELLOW') ? Math.ceil(18.0 - lightTimer) : Math.ceil(28.0 - lightTimer));
+            if (remSec < 1) remSec = 1;
+            let hintMsg = `ℹ️ 位置: (X:${pPos.x.toFixed(1)}, Z:${pPos.z.toFixed(1)}) 行人號誌:${pedLightState === 'GREEN' ? `🟢綠燈 (倒數${remSec}秒)` : (pedLightState === 'YELLOW' ? `🟡黃燈 (${remSec}秒)` : `🔴紅燈 (等待${remSec}秒)`) }`;
+
+            if (symbols.equity && currentScenario === 'blind') {
+                hintMsg += ` | 🧭 <b>雙側導盲磚方向確認：前方為垂直斑馬線，15秒嗶嗶語音號誌引導中！</b>`;
+            }
+
+            badge.innerHTML = hintMsg;
+        }
+    }
+
+    function applyTransformation() {
+        initAudioContext();
+        let frustration = 95;
+        let level = "Level 0 (連人行道都沒有)";
+
+        if (symbols.equality) {
+            frustration -= 20;
+            arcadeObstaclesGroup.visible = false; // 清除騎樓違停機車與障礙！
+            sidewalkStartMesh.visible = true;    // 馬路兩側鋪設基礎 3D 人行道！
+            sidewalkDestMesh.visible = true;
+            level = "Level 1 (雙側基礎人行道鋪設)";
+        } else {
+            arcadeObstaclesGroup.visible = true;
+            sidewalkStartMesh.visible = false;
+            sidewalkDestMesh.visible = false;
+        }
+
+        if (symbols.equity) {
+            frustration -= 30;
+            fullTactileGroup.visible = true; // 全線鋪滿黃色導盲磚！
+            playBeepSound();
+            level = "Level 2 (全線導盲磚與語音號誌)";
+        } else {
+            fullTactileGroup.visible = false;
+        }
+
+        if (symbols.justice) {
+            frustration -= 35;
+            level = "Level 4 (完美通用無障礙)";
+        }
+
+        if (frustration < 0) frustration = 0;
+
+        document.getElementById('val-frustration').innerText = `${frustration}% ` + (frustration > 40 ? "(危險)" : "(安全)");
+        document.getElementById('val-level').innerText = level;
+
+        updateStatus(false, false);
+    }
+
+    function updateTrafficAndLights() {
+        lightTimer += 0.016;
+
+        const hudEl = document.getElementById('ped-light-hud');
+        const hudIcon = document.getElementById('ped-hud-icon');
+        const hudTimer = document.getElementById('ped-hud-timer');
+
+        if (lightTimer < 15.0) {
+            pedLightState = 'GREEN';
+            pedLampMeshGreen.material.color.setHex(0x10B981); // 小綠人亮
+            pedLampMeshRed.material.color.setHex(0x334155);   // 小紅人暗
+
+            let remainingGreen = Math.ceil(15.0 - lightTimer);
+            if (remainingGreen < 1) remainingGreen = 1;
+
+            if (hudEl) {
+                hudEl.className = "ped-light-hud";
+                hudIcon.innerHTML = "🚶🟢";
+                hudTimer.innerText = `${remainingGreen}s`;
+                hudTimer.style.color = "#4ADE80";
+            }
+        } else if (lightTimer < 18.0) {
+            pedLightState = 'YELLOW';
+            pedLampMeshGreen.material.color.setHex(0xF59E0B);
+            pedLampMeshRed.material.color.setHex(0x334155);
+
+            let remainingYellow = Math.ceil(18.0 - lightTimer);
+            if (remainingYellow < 1) remainingYellow = 1;
+
+            if (hudEl) {
+                hudEl.className = "ped-light-hud yellow-phase";
+                hudIcon.innerHTML = "⚠️🟡";
+                hudTimer.innerText = `${remainingYellow}s`;
+                hudTimer.style.color = "#F59E0B";
+            }
+        } else {
+            pedLightState = 'RED';
+            pedLampMeshGreen.material.color.setHex(0x334155);
+            pedLampMeshRed.material.color.setHex(0xEF4444);   // 小紅人亮
+
+            let remainingRed = Math.ceil(28.0 - lightTimer);
+            if (remainingRed < 1) remainingRed = 1;
+
+            if (hudEl) {
+                hudEl.className = "ped-light-hud red-phase";
+                hudIcon.innerHTML = "🛑🔴";
+                hudTimer.innerText = `${remainingRed}s`;
+                hudTimer.style.color = "#EF4444";
+            }
+
+            if (lightTimer > 28.0) lightTimer = 0;
+        }
+
+        carMeshes.forEach((car) => {
+            let speed = car.userData.speed;
+            if (pedLightState === 'GREEN') {
+                if (car.position.x > -8 && car.position.x < -3) {
+                    speed = 0;
+                }
+            }
+
+            car.position.x += speed;
+            if (car.position.x > 18) car.position.x = -18;
+        });
+    }
+
+    function showSuccessModal() {
+        document.getElementById('success-modal').style.display = 'flex';
+    }
+
+    function showDangerModal() {
+        document.getElementById('danger-modal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+        // 修正：體驗者過馬路通關或觸發事故後，一律自動重置為起始點，不得來回過馬路產生盲點
+        pPos.set(0, 0.5, 7);
+        pRotY = 0;
+        hasCompleted = false;
+
+        if (wheelchairGroup) {
+            wheelchairGroup.position.copy(pPos);
+            wheelchairGroup.rotation.y = pRotY;
+        }
+        updateCameraView();
+        updateStatus(false, false);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        updateTrafficAndLights();
+        renderer.render(scene, camera);
+    }
+
+    // 修正：鍵盤操作監聽 [↑/W 前進]、[↓/S 後退]、[←/A 左轉]、[→/D 右轉]
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') movePlayer('forward');
+        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') movePlayer('backward');
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') movePlayer('left');
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') movePlayer('right');
+    });
+
+    window.addEventListener('resize', () => {
+        const viewport = document.getElementById('viewport-3d');
+        camera.aspect = viewport.clientWidth / viewport.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    });
+
+    window.onload = () => {
+        init3D();
+        setScenario('blind');
+    };
+</script>
+</body>
+</html>
