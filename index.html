@@ -61,28 +61,29 @@
         h1 {
             color: #4ADE80;
             margin: 0;
-            font-size: 19px;
+            font-size: 19.5px;
             font-weight: 800;
         }
 
         .subtitle { color: #94A3B8; font-size: 11.5px; }
 
-        /* 情境帶入說明區塊 */
+        /* 情境帶入說明區塊 (兒童識讀強化：加大字體與高對比呈現) */
         .story-intro {
             background: #0F172A;
             border-left: 4px solid #F59E0B;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 11.5px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13.5px;
             color: #FEF3C7;
             margin-bottom: 6px;
-            line-height: 1.35;
+            line-height: 1.45;
+            box-shadow: inset 0 0 10px rgba(245,158,11,0.08);
         }
 
         /* 雙欄 layout */
         .main-layout {
             display: grid;
-            grid-template-columns: 1fr 340px;
+            grid-template-columns: 1fr 360px;
             gap: 10px;
             flex: 1;
             min-height: 0;
@@ -113,13 +114,13 @@
 
         .tab-btn {
             flex: 1;
-            padding: 5px 8px;
+            padding: 6px 8px;
             border: 2px solid #475569;
             border-radius: 10px;
             background: #0F172A;
             cursor: pointer;
             text-align: center;
-            font-size: 12.5px;
+            font-size: 13px;
             font-weight: bold;
             color: #94A3B8;
             transition: all 0.3s ease;
@@ -132,14 +133,15 @@
             box-shadow: 0 0 12px rgba(74,222,128,0.2);
         }
 
+        /* 情境導引 banner (字體加大) */
         .info-banner {
             background: #1E3A8A;
             border-left: 4px solid #38BDF8;
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 11.5px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13.5px;
             color: #E0F2FE;
-            line-height: 1.35;
+            line-height: 1.4;
         }
 
         /* 3D Viewport - 自動分配剩餘高度 */
@@ -147,7 +149,7 @@
             position: relative;
             width: 100%;
             flex: 1;
-            min-height: 180px;
+            min-height: 170px;
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid #475569;
@@ -230,7 +232,7 @@
         .btn-move:hover { background: #0284C7; }
 
         .status-badge {
-            font-size: 11px;
+            font-size: 11.5px;
             font-weight: bold;
             padding: 4px 8px;
             border-radius: 6px;
@@ -240,7 +242,7 @@
         .status-badge.clear { background: #064E3B; color: #A7F3D0; border: 1.5px solid #10B981; }
         .status-badge.warning { background: #78350F; color: #FEF3C7; border: 1.5px solid #F59E0B; }
 
-        /* 儀表板 - 橫列置於上方 */
+        /* 儀表板 - 橫列置於上方 (動態亮燈脈衝與跳動升級特效) */
         .dash-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -250,12 +252,54 @@
         .dash-card {
             background: #0F172A; padding: 4px 8px; border-radius: 8px;
             text-align: center; border-top: 3px solid #4ADE80;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .dash-title { font-size: 10.5px; color: #94A3B8; }
-        .dash-val { font-size: 15px; font-weight: 800; margin-top: 1px; }
+        /* 亮燈動態脈衝光特效 */
+        .dash-card.pulse-glow {
+            animation: cardGlowPulse 1.2s ease infinite alternate;
+            border-top-color: #4ADE80 !important;
+            transform: translateY(-2px) scale(1.03);
+        }
 
-        /* 右側象徵物解鎖直欄 */
+        .dash-card.pulse-cyan {
+            animation: cardCyanPulse 1.2s ease infinite alternate;
+            border-top-color: #38BDF8 !important;
+            transform: translateY(-2px) scale(1.03);
+        }
+
+        .dash-card.pulse-red {
+            animation: cardRedPulse 1.2s ease infinite alternate;
+            border-top-color: #EF4444 !important;
+        }
+
+        @keyframes cardGlowPulse {
+            0% { box-shadow: 0 0 6px rgba(74, 222, 128, 0.3); }
+            100% { box-shadow: 0 0 22px rgba(74, 222, 128, 0.9), inset 0 0 10px rgba(74, 222, 128, 0.3); }
+        }
+
+        @keyframes cardCyanPulse {
+            0% { box-shadow: 0 0 6px rgba(56, 189, 248, 0.3); }
+            100% { box-shadow: 0 0 22px rgba(56, 189, 248, 0.9), inset 0 0 10px rgba(56, 189, 248, 0.3); }
+        }
+
+        @keyframes cardRedPulse {
+            0% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.3); }
+            100% { box-shadow: 0 0 18px rgba(239, 68, 68, 0.8), inset 0 0 10px rgba(239, 68, 68, 0.3); }
+        }
+
+        .dash-title { font-size: 11px; color: #94A3B8; }
+        .dash-val { font-size: 15.5px; font-weight: 800; margin-top: 1px; transition: color 0.3s, transform 0.3s; }
+        .dash-val.val-pop { animation: valPopAnim 0.5s ease; }
+        @keyframes valPopAnim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); color: #F59E0B; }
+            100% { transform: scale(1); }
+        }
+
+        /* 右側象徵物解鎖直欄 (兒童識讀強化：文字階層依序加大) */
         .symbols-box {
             background: #0F172A;
             padding: 8px 10px;
@@ -264,8 +308,8 @@
         }
 
         .symbols-title {
-            font-size: 13px; font-weight: bold; color: #38BDF8; margin-top: 0;
-            margin-bottom: 6px; text-align: center;
+            font-size: 15.5px; font-weight: 800; color: #38BDF8; margin-top: 0;
+            margin-bottom: 6px; text-align: center; letter-spacing: 0.5px;
         }
 
         .symbols-grid {
@@ -275,23 +319,24 @@
         }
 
         .symbol-card {
-            background: #1E293B; padding: 6px 8px; border-radius: 10px;
+            background: #1E293B; padding: 8px 10px; border-radius: 10px;
             border: 2px solid #334155; cursor: pointer; text-align: left; transition: 0.3s;
-            display: flex; align-items: center; gap: 8px;
+            display: flex; align-items: center; gap: 10px;
         }
 
         .symbol-card:hover { border-color: #38BDF8; }
         .symbol-card.active { border-color: #4ADE80; background: #064E3B; }
 
-        .symbol-icon { font-size: 20px; flex-shrink: 0; }
-        .symbol-name { font-size: 12px; font-weight: bold; margin-bottom: 1px; color: #F8FAFC; }
-        .symbol-desc { font-size: 10.5px; color: #94A3B8; line-height: 1.3; }
+        .symbol-icon { font-size: 24px; flex-shrink: 0; }
+        .symbol-name { font-size: 14px; font-weight: 800; margin-bottom: 2px; color: #F8FAFC; line-height: 1.3; }
+        .symbol-desc { font-size: 12px; color: #CBD5E1; line-height: 1.4; }
 
         .btn-upgrade {
             width: 100%; padding: 8px; background: #059669; color: #FFF;
-            font-size: 14px; font-weight: bold; border: none; border-radius: 10px;
+            font-size: 15px; font-weight: bold; border: none; border-radius: 10px;
             cursor: pointer; margin-top: 6px; box-shadow: 0 4px 12px rgba(5,150,105,0.3);
         }
+        .btn-upgrade:hover { background: #047857; }
         .btn-upgrade:hover { background: #047857; }
 
         /* 心得單 */
@@ -391,9 +436,9 @@
                     <div class="dash-title">過馬路險境指數</div>
                     <div class="dash-val" id="val-frustration" style="color: #EF4444;">95% (無人行道險境)</div>
                 </div>
-                <div class="dash-card">
-                    <div class="dash-title">同理心感知點數</div>
-                    <div class="dash-val" id="val-empathy" style="color: #38BDF8;">+420 Pt</div>
+                <div class="dash-card" style="cursor: pointer;" onclick="openEmpathyModal()" title="點擊查看同理心感知點數涵義">
+                    <div class="dash-title">同理心感知點數 ℹ️</div>
+                    <div class="dash-val" id="val-empathy" style="color: #38BDF8;">+100 Pt</div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-title">3D 動態路口無障礙等級</div>
@@ -496,6 +541,24 @@
     </div>
 </div>
 
+<!-- 9. 同理心感知點數說明 Modal 視窗 -->
+<div class="modal-overlay" id="empathy-modal">
+    <div class="modal-content" style="border-color: #38BDF8; max-width: 560px;">
+        <div class="modal-icon">💡🧠</div>
+        <div class="modal-title" style="color: #38BDF8;">什麼是「同理心感知點數」？</div>
+        <div class="modal-body" style="font-size: 13.5px; line-height: 1.5;">
+            <b>【數值累積的教育意義與涵義】</b><br>
+            • <b>初始 100 Pt (基礎察覺)</b>：代表體驗者立足於身障/視障者的視角，親身感受「連人行道都沒有、聽不到號誌」的危險與孤立感。<br>
+            • <b>+150 Pt (平等 Equality)</b>：代表理解去除實體障礙（清除騎樓違停、鋪設人行道）給予基礎保障。<br>
+            • <b>+200 Pt (公平 Equity)</b>：代表體會針對差異提供適當資源（導盲磚、語音號誌）才能達成實質平權。<br>
+            • <b>+250 Pt (正義 Justice)</b>：代表體會消除結構障礙（削平高低落差斜坡）徹底根除危險與不便。<br>
+            • <b>+100 Pt 滿分連鎖加成 (800 Pt 完整通用)</b>：展現「通用設計與無障礙包容」的最高公民素養！<br><br>
+            🎯 <b>核心素養連結 (SDGs)</b>：連結 <b>SDG 10 減少不平等</b> 與 <b>SDG 11 永續城鄉</b>，培養學生「換位思考、察覺弱勢處境，並主動推動環境改造」的現代公民素養！
+        </div>
+        <button class="btn-close-modal" style="background: #0284C7;" onclick="closeModal('empathy-modal')">💙 我了解同理心感知價值了</button>
+    </div>
+</div>
+
 <script>
     // --- WEB AUDIO API 聲響合成器 ---
     let audioCtx = null;
@@ -594,6 +657,25 @@
         gain.connect(audioCtx.destination);
         osc.start(now);
         osc.stop(now + 0.35);
+    }
+
+    function playUpgradeChimeSound() {
+        initAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (升級和弦)
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+            gain.gain.setValueAtTime(0.25, now + idx * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.22);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.22);
+        });
     }
 
     setInterval(() => {
@@ -878,6 +960,13 @@
         pPos.set(0, 0.5, 7);
         pRotY = 0; // 面向過馬路方向 (-Z)
 
+        // 各關卡初始狀態重置：同理心點數歸為 100 Pt 基礎點數，解除平權象徵物選取
+        symbols = { equality: false, equity: false, justice: false };
+        document.querySelectorAll('.symbol-card').forEach(el => el.classList.remove('active'));
+        if (typeof applyTransformation === 'function') {
+            applyTransformation();
+        }
+
         document.getElementById('tab-blind').classList.remove('active');
         document.getElementById('tab-wheelchair').classList.remove('active');
 
@@ -888,12 +977,12 @@
             document.getElementById('tab-blind').classList.add('active');
             viewport.classList.add('blind-mode');
             text.innerHTML = `👨‍🦯 <b>【關卡一：視障第一人稱視角情境與任務】</b>：你眼前是一片漆黑，且耳邊預設<b>完全聽不到號誌聲響</b>！<br>🎯 <b>任務目標</b>：請嘗試前進感受迷失與車流危險，並於右側點擊<b>【📦 公平之箱】➔【🚀 啟動升級鍵】</b>解鎖 3D 黃色導盲磚與 15 秒嗶嗶語音號誌，聽聲辨位安全過馬路！`;
-            wheelchairGroup.visible = false;
+            if (wheelchairGroup) wheelchairGroup.visible = false;
         } else {
             document.getElementById('tab-wheelchair').classList.add('active');
             viewport.classList.remove('blind-mode');
             text.innerHTML = `👩‍🦽 <b>【關卡二：身障人士第一人稱視角】</b>：你正以<b>輪椅第一人稱視角</b>推進過馬路！穿越道兩端設有 <b>20cm 崁（高低落差）</b>，缺乏斜坡時輪椅下階梯顛簸阻力極大！<br>🎯 <b>任務目標</b>：請推進輪椅體會過馬路與高低落差之艱辛阻礙，並點擊右側<b>【🗽 正義之光】➔【🚀 啟動升級鍵】</b>削平斜坡順暢通行！`;
-            wheelchairGroup.visible = true;
+            if (wheelchairGroup) wheelchairGroup.visible = true;
         }
 
         updateCameraView();
@@ -1058,17 +1147,76 @@
         }
     }
 
+    let currentEmpathyPoints = 100;
+    let empathyAnimTimer = null;
+
+    function animateEmpathyCounter(targetVal) {
+        const el = document.getElementById('val-empathy');
+        if (!el) return;
+        if (empathyAnimTimer) clearInterval(empathyAnimTimer);
+
+        const startVal = currentEmpathyPoints;
+        const diff = targetVal - startVal;
+        if (diff === 0) {
+            el.innerText = `+${targetVal} Pt`;
+            return;
+        }
+
+        const steps = 12;
+        let stepCount = 0;
+        empathyAnimTimer = setInterval(() => {
+            stepCount++;
+            const current = Math.round(startVal + (diff * (stepCount / steps)));
+            el.innerText = `+${current} Pt`;
+            if (stepCount >= steps) {
+                clearInterval(empathyAnimTimer);
+                el.innerText = `+${targetVal} Pt`;
+                currentEmpathyPoints = targetVal;
+            }
+        }, 35);
+    }
+
+    function triggerCardGlowEffect(activeCount) {
+        const cards = document.querySelectorAll('.dash-card');
+        cards.forEach((card, idx) => {
+            card.classList.remove('pulse-glow', 'pulse-cyan', 'pulse-red');
+            void card.offsetWidth; // 重新觸發動畫
+
+            if (idx === 0) {
+                card.classList.add(activeCount > 0 ? 'pulse-cyan' : 'pulse-red');
+            } else if (idx === 1) {
+                card.classList.add('pulse-cyan');
+            } else {
+                card.classList.add('pulse-glow');
+            }
+        });
+
+        document.querySelectorAll('.dash-val').forEach(valEl => {
+            valEl.classList.remove('val-pop');
+            void valEl.offsetWidth;
+            valEl.classList.add('val-pop');
+        });
+
+        playUpgradeChimeSound();
+
+        setTimeout(() => {
+            cards.forEach(card => card.classList.remove('pulse-glow', 'pulse-cyan', 'pulse-red'));
+        }, 1400);
+    }
+
     function applyTransformation() {
         initAudioContext();
 
         // 1. 同理心感知點數動態遞增/遞減計算 (依據啟動項目與數量)
         let empathy = 100; // 初始現狀基礎同理心點數
-        if (symbols.equality) empathy += 150;
-        if (symbols.equity) empathy += 200;
-        if (symbols.justice) empathy += 250;
+        let activeCount = 0;
+        if (symbols.equality) { empathy += 150; activeCount++; }
+        if (symbols.equity) { empathy += 200; activeCount++; }
+        if (symbols.justice) { empathy += 250; activeCount++; }
         if (symbols.equality && symbols.equity && symbols.justice) empathy += 100; // 完整通用平權連鎖加成
 
-        document.getElementById('val-empathy').innerText = `+${empathy} Pt`;
+        // 動態數字遞增動畫
+        animateEmpathyCounter(empathy);
 
         // 2. 評估三階段組合條件與限制 (僅啟動第三階段無法完美通用無障礙)
         let frustration = 95;
@@ -1113,6 +1261,9 @@
 
         document.getElementById('val-frustration').innerText = `${frustration}% ` + (frustration > 40 ? "(危險)" : "(安全)");
         document.getElementById('val-level').innerText = level;
+
+        // 觸發儀表板三項數值動態亮燈脈衝與特效
+        triggerCardGlowEffect(activeCount);
 
         updateStatus(false, false);
     }
@@ -1215,19 +1366,25 @@
         document.getElementById('danger-modal').style.display = 'flex';
     }
 
+    function openEmpathyModal() {
+        document.getElementById('empathy-modal').style.display = 'flex';
+    }
+
     function closeModal(id) {
         document.getElementById(id).style.display = 'none';
-        // 修正：體驗者過馬路通關或觸發事故後，一律自動重置為起始點，不得來回過馬路產生盲點
-        pPos.set(0, 0.5, 7);
-        pRotY = 0;
-        hasCompleted = false;
+        // 僅在通關或事故 Modal 關閉時重置位置與狀態
+        if (id === 'success-modal' || id === 'danger-modal') {
+            pPos.set(0, 0.5, 7);
+            pRotY = 0;
+            hasCompleted = false;
 
-        if (wheelchairGroup) {
-            wheelchairGroup.position.copy(pPos);
-            wheelchairGroup.rotation.y = pRotY;
+            if (wheelchairGroup) {
+                wheelchairGroup.position.copy(pPos);
+                wheelchairGroup.rotation.y = pRotY;
+            }
+            updateCameraView();
+            updateStatus(false, false);
         }
-        updateCameraView();
-        updateStatus(false, false);
     }
 
     function animate() {
