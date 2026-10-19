@@ -396,6 +396,59 @@
             font-weight: bold; border: none; border-radius: 10px; cursor: pointer;
         }
         .btn-close-modal.danger-btn { background: #DC2626; }
+    
+        /* ==================== 🖨️ A4 單頁滿版專用 CSS ==================== */
+        #printable-worksheet {
+            display: none;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 6mm 8mm;
+        }
+
+        @media print {
+            /* 隱藏網頁所有 3D 畫布與 UI 按鈕 */
+            body > *:not(#printable-worksheet) {
+                display: none !important;
+            }
+
+            html, body {
+                height: 100% !important;
+                max-height: 100% !important;
+                overflow: hidden !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* 顯示 1 頁 A4 精準學習單版面 */
+            #printable-worksheet {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: 275mm !important;
+                max-height: 275mm !important;
+                margin: 0 !important;
+                padding: 4mm 6mm !important;
+                background: #ffffff !important;
+                color: #0f172a !important;
+                font-family: "微軟正黑體", "Microsoft JhengHei", -apple-system, sans-serif !important;
+                box-sizing: border-box !important;
+                z-index: 999999 !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .print-card {
+                page-break-inside: avoid !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -503,11 +556,31 @@
                 <button class="btn-upgrade" onclick="applyTransformation()">🚀 啟動升級鍵</button>
             </div>
 
-            <!-- 6. 學習單導出 -->
+            <!-- 6. 學習單與心得導出 -->
             <div class="reflection-box">
-                <div style="font-weight:bold; color:#FBBF24; margin-bottom:6px; font-size: 13px;">✏️ 課堂心得與 3D 無障礙反思：</div>
-                <textarea id="reflection-input" placeholder="寫下你在騎樓無人行道過馬路、20cm崁顛簸以及削平斜坡的心得..."></textarea>
-                <button class="btn-export" onclick="window.print()">🖨️ 列印 / 導出學習單</button>
+                <div style="font-weight:bold; color:#FBBF24; margin-bottom:6px; font-size: 13px; display:flex; align-items:center; gap:4px;">
+                    <span>📝 【行人友善與無障礙空間倡議】個人行動提案：</span>
+                </div>
+                
+                <!-- 學生個人資料輸入欄位 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 6px; margin-bottom: 8px;">
+                    <div>
+                        <label style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 2px;">班級：</label>
+                        <input type="text" id="student-class" placeholder="如: 六1班" style="width: 100%; background: #0F172A; border: 1px solid #475569; color: #FFF; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 2px;">座號：</label>
+                        <input type="text" id="student-seat" placeholder="如: 01" style="width: 100%; background: #0F172A; border: 1px solid #475569; color: #FFF; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #94A3B8; display: block; margin-bottom: 2px;">姓名：</label>
+                        <input type="text" id="student-name" placeholder="請輸入姓名" style="width: 100%; background: #0F172A; border: 1px solid #475569; color: #FFF; padding: 4px 8px; border-radius: 6px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="font-weight:bold; color:#FBBF24; margin-bottom:4px; font-size: 12px;">✏️ 課堂心得與 3D 無障礙反思：</div>
+                <textarea id="reflection-input" placeholder="寫下你在騎樓無人行道過馬路、20cm崁顛簸以及削平斜坡的心得與倡議方案..."></textarea>
+                <button class="btn-export" onclick="prepareAndPrint()">📥 下載學習單紀錄</button>
             </div>
         </div>
     </div>
@@ -1371,19 +1444,25 @@
     }
 
     function closeModal(id) {
-        document.getElementById(id).style.display = 'none';
-        // 僅在通關或事故 Modal 關閉時重置位置與狀態
-        if (id === 'success-modal' || id === 'danger-modal') {
-            pPos.set(0, 0.5, 7);
-            pRotY = 0;
-            hasCompleted = false;
+        try {
+            const modalEl = document.getElementById(id);
+            if (modalEl) modalEl.style.display = 'none';
+            
+            // 僅在通關或事故 Modal 關閉時重置位置與狀態
+            if (id === 'success-modal' || id === 'danger-modal') {
+                pPos.set(0, 0.5, 7);
+                pRotY = 0;
+                hasCompleted = false;
 
-            if (wheelchairGroup) {
-                wheelchairGroup.position.copy(pPos);
-                wheelchairGroup.rotation.y = pRotY;
+                if (wheelchairGroup) {
+                    wheelchairGroup.position.copy(pPos);
+                    wheelchairGroup.rotation.y = pRotY;
+                }
+                updateCameraView();
+                updateStatus(false, false);
             }
-            updateCameraView();
-            updateStatus(false, false);
+        } catch (err) {
+            console.error("Error in closeModal:", err);
         }
     }
 
@@ -1413,5 +1492,123 @@
         setScenario('blind');
     };
 </script>
+
+<!-- ==================== 🖨️ 列印/PDF 導出 A4 單頁獨立學習單 ==================== -->
+<div id="printable-worksheet">
+    <!-- 頁頭標題 -->
+    <div style="text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 6px; margin-bottom: 10px;">
+        <div style="font-size: 20px; font-weight: 800; letter-spacing: 0.5px; color: #0f172a; margin-bottom: 2px;">
+            【行人友善與無障礙空間倡議】
+        </div>
+        <div style="font-size: 17px; font-weight: 700; color: #006747; margin-bottom: 4px;">
+            個人行動提案 —— 3D 沉浸式無障礙體驗心得學習單
+        </div>
+        <div style="font-size: 11.5px; color: #475569;">
+            新北市龍埔國小 校訂國際教育課程 主題二：永續城鄉 (SDG 11)
+        </div>
+    </div>
+
+    <!-- 學生基本資料列 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border: 1.5px solid #334155; background: #f8fafc; padding: 8px 14px; border-radius: 6px; margin-bottom: 10px; font-size: 13.5px; font-weight: 700;">
+        <span>班級：<span id="print-class-display" style="border-bottom: 1.5px solid #0f172a; padding: 0 12px; min-width: 70px; display: inline-block;">________</span></span>
+        <span>座號：<span id="print-seat-display" style="border-bottom: 1.5px solid #0f172a; padding: 0 12px; min-width: 50px; display: inline-block;">____</span></span>
+        <span>姓名：<span id="print-name-display" style="border-bottom: 1.5px solid #0f172a; padding: 0 12px; min-width: 90px; display: inline-block;">________</span></span>
+        <span style="color: #475569; font-weight: normal; font-size: 12.5px;">日期：<span id="print-date-display">2026/10/08</span></span>
+    </div>
+
+    <!-- 3D 體驗數據與評量記錄 -->
+    <div class="print-card" style="border: 1px solid #cbd5e1; background: #f1f5f9; padding: 8px 14px; border-radius: 6px; margin-bottom: 10px;">
+        <div style="font-size: 13.5px; font-weight: bold; color: #006747; margin-bottom: 4px;">
+            📊 3D 無障礙沉浸式體驗數據紀錄：
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 12.5px; margin-bottom: 4px;">
+            <div>• <b>當前體驗視角</b>：<span id="print-perspective-display">身障人士第一人稱視角</span></div>
+            <div>• <b>同理心感知點數</b>：<span id="print-score-display" style="color: #d97706; font-weight: bold;">100 Pt</span></div>
+            <div>• <b>無障礙等級</b>：<span id="print-level-display" style="color: #0055b8; font-weight: bold;">Level 0 (障礙路口)</span></div>
+        </div>
+        <div style="font-size: 12px; color: #334155;">
+            • <b>已啟動平權設施</b>：<span id="print-upgrades-display">尚未解鎖設施</span>
+        </div>
+    </div>
+
+    <!-- 心得反思與個人行動提案 -->
+    <div class="print-card" style="border: 1.5px solid #0f172a; padding: 12px 14px; border-radius: 6px; height: 165mm; background: #ffffff; display: flex; flex-direction: column;">
+        <div style="font-size: 14.5px; font-weight: bold; color: #0f172a; border-bottom: 1.5px solid #006747; padding-bottom: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>✏️ 課堂心得與個人行動提案反思內容：</span>
+            <span style="font-size: 11px; color: #64748b; font-weight: normal;">(倡議重點：騎樓防違停、導盲磚、語音號誌與削平斜坡)</span>
+        </div>
+        <div id="print-reflection-display" style="font-size: 13.5px; line-height: 1.7; color: #0f172a; white-space: pre-wrap; word-break: break-word; flex-grow: 1;">
+            (學生心得內容區)
+        </div>
+    </div>
+
+    <!-- 頁尾評語與印章區 -->
+    <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 12px; color: #475569; border-top: 1px solid #cbd5e1; padding-top: 6px;">
+        <div>
+            <b>永續發展目標對應</b>：SDG 10 減少不平等 ✕ SDG 11 永續城鄉
+        </div>
+        <div style="text-align: right;">
+            <b>指導教師評語 / 蓋章</b>：_______________________
+        </div>
+    </div>
+</div>
+
+<script>
+function prepareAndPrint() {
+    try {
+        const cls = (document.getElementById('student-class') ? document.getElementById('student-class').value.trim() : '') || '__________';
+        const seat = (document.getElementById('student-seat') ? document.getElementById('student-seat').value.trim() : '') || '____';
+        const name = (document.getElementById('student-name') ? document.getElementById('student-name').value.trim() : '') || '__________';
+        const reflectionText = (document.getElementById('reflection-input') ? document.getElementById('reflection-input').value.trim() : '') || '(體驗者尚未填寫心得與倡議內容)';
+        
+        const currentPerspectiveText = (currentScenario === 'blind') ? "視障人士第一人稱視角" : "身障人士第一人稱視角";
+        const scoreVal = currentEmpathyPoints + ' Pt';
+        
+        const levelEl = document.getElementById('val-level');
+        const levelVal = levelEl ? levelEl.innerText : "Level 0 (連人行道都沒有)";
+        
+        let activeUpgrades = [];
+        if (symbols && symbols.equality) activeUpgrades.push('【第一階段】平等之鑰（鋪設人行道與綠底斑馬線）');
+        if (symbols && symbols.equity) activeUpgrades.push('【第二階段】公平之箱（黃色導盲磚與15秒語音號誌）');
+        if (symbols && symbols.justice) activeUpgrades.push('【第三階段】正義之光（削平20cm崁高低落差斜坡）');
+        const upgradesText = activeUpgrades.length > 0 ? activeUpgrades.join('、') : '尚未解鎖平權設施（初始障礙狀態）';
+
+        const classDisp = document.getElementById('print-class-display');
+        if (classDisp) classDisp.textContent = cls;
+        
+        const seatDisp = document.getElementById('print-seat-display');
+        if (seatDisp) seatDisp.textContent = seat;
+        
+        const nameDisp = document.getElementById('print-name-display');
+        if (nameDisp) nameDisp.textContent = name;
+        
+        const now = new Date();
+        const dateStr = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日';
+        const dateDisp = document.getElementById('print-date-display');
+        if (dateDisp) dateDisp.textContent = dateStr;
+        
+        const persDisp = document.getElementById('print-perspective-display');
+        if (persDisp) persDisp.textContent = currentPerspectiveText;
+        
+        const scoreDisp = document.getElementById('print-score-display');
+        if (scoreDisp) scoreDisp.textContent = scoreVal;
+        
+        const levelDisp = document.getElementById('print-level-display');
+        if (levelDisp) levelDisp.textContent = levelVal;
+        
+        const upgDisp = document.getElementById('print-upgrades-display');
+        if (upgDisp) upgDisp.textContent = upgradesText;
+        
+        const refDisp = document.getElementById('print-reflection-display');
+        if (refDisp) refDisp.textContent = reflectionText;
+
+        window.print();
+    } catch (err) {
+        console.error("Print preparation error:", err);
+        window.print();
+    }
+}
+</script>
+
 </body>
 </html>
